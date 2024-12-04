@@ -1,3 +1,90 @@
+<template>
+  <div class="device-shadow">
+    <!-- 탭 버튼 -->
+    <div class="tabs">
+      <button
+        :class="{ active: activeTab === 'care' }"
+        @click="activeTab = 'care'"
+      >
+        에어 케어
+      </button>
+      <button
+        :class="{ active: activeTab === 'data' }"
+        @click="activeTab = 'data'"
+      >
+        에어 데이터
+      </button>
+    </div>
+
+    <!-- 에어 케어 탭 -->
+    <div v-if="activeTab === 'care'" class="tab-content">
+      <h2>집 안</h2>
+      <div class="card-group">
+        <div
+          class="card"
+          :style="{ backgroundColor: getColorByStatus(co2Status) }"
+        >
+          <h3>이산화탄소 농도</h3>
+          <p>{{ co2Status }} ({{ shadowData?.state?.reported?.co2 || 0 }} ppm)</p>
+        </div>
+        <div
+          class="card"
+          :style="{ backgroundColor: getColorByStatus(humidityStatus) }"
+        >
+          <h3>습도</h3>
+          <p>{{ humidityStatus }} ({{ shadowData?.state?.reported?.humid || 0 }}%)</p>
+        </div>
+        <div
+          class="card"
+          :style="{ backgroundColor: getColorByStatus(harmfulGasStatus) }"
+        >
+          <h3>유해가스</h3>
+          <p>{{ harmfulGasStatus }} ({{ shadowData?.state?.reported?.mq135 || 0 }})</p>
+        </div>
+      </div>
+
+      <h2>현재 지역: {{ shadowData?.state?.reported?.region || "알 수 없음" }}</h2>
+      <div class="card-group">
+        <div
+          class="card"
+          :style="{ backgroundColor: getColorByStatus(pm10Status) }"
+        >
+          <h3>미세먼지</h3>
+          <p>{{ pm10Status }} ({{ shadowData?.state?.reported?.airQuality?.pm10 || 0 }} μg/m³)</p>
+        </div>
+        <div
+          class="card"
+          :style="{ backgroundColor: getColorByStatus(pm25Status) }"
+        >
+          <h3>초미세먼지</h3>
+          <p>{{ pm25Status }} ({{ shadowData?.state?.reported?.airQuality?.pm25 || 0 }} μg/m³)</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button>창문 열기</button>
+        <button>창문 닫기</button>
+      </div>
+    </div>
+
+    <!-- 에어 데이터 탭 -->
+    <div v-if="activeTab === 'data'" class="tab-content">
+      <div class="graph-container">
+        <div>
+          <h3>이산화탄소 농도</h3>
+          <div ref="co2Graph" class="graph"></div>
+          <p>가장 높은 값: {{ maxCo2Time }}</p>
+        </div>
+        <div>
+          <h3>유해가스 농도</h3>
+          <div ref="harmfulGasGraph" class="graph"></div>
+          <p>가장 높은 값: {{ maxGasTime }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script>
 import * as echarts from "echarts";
 import { getShadowData } from "@/aws-iot";
@@ -29,7 +116,7 @@ export default {
     },
     humidityStatus() {
       const humidity = this.shadowData?.state?.reported?.humid || 0;
-      if (humidity < 30) return "건조함";
+      if (humidity < 40) return "건조함";
       if (humidity <= 60) return "적당함";
       return "습함";
     },
@@ -60,6 +147,27 @@ export default {
   },
 
   methods: {
+    getColorByStatus(status) {
+      switch (status) {
+        case "좋음":
+          return "#d4edda"; // 연한 녹색
+        case "보통":
+          return "#fff3cd"; // 연한 노랑
+        case "주의":
+        case "나쁨":
+          return "#f8d7da"; // 연한 빨강
+        case "매우 나쁨":
+        case "위험":
+          return "#f5c6cb"; // 짙은 빨강
+        case "건조함":
+          return "#e8f4fa"; // 연한 파랑
+        case "습함":
+          return "#cce5ff"; // 밝은 파랑
+        default:
+          return "#f4f4f4"; // 기본값 회색
+      }
+    },
+
     async fetchShadowData() {
       try {
         const data = await getShadowData(this.thingName);
@@ -134,81 +242,6 @@ export default {
   },
 };
 </script>
-
-<template>
-  <div class="device-shadow">
-    <!-- 탭 버튼 -->
-    <div class="tabs">
-      <button
-        :class="{ active: activeTab === 'care' }"
-        @click="activeTab = 'care'"
-      >
-        에어 케어
-      </button>
-      <button
-        :class="{ active: activeTab === 'data' }"
-        @click="activeTab = 'data'"
-      >
-        에어 데이터
-      </button>
-    </div>
-
-    <!-- 에어 케어 탭 -->
-    <div v-if="activeTab === 'care'" class="tab-content">
-      <h2>집 안</h2>
-      <div class="card-group">
-        <div class="card">
-          <h3>이산화탄소 농도</h3>
-          <p>{{ co2Status }}</p>
-        </div>
-        <div class="card">
-          <h3>습도</h3>
-          <p>{{ humidityStatus }}</p>
-        </div>
-        <div class="card">
-          <h3>유해가스</h3>
-          <p>{{ harmfulGasStatus }}</p>
-        </div>
-      </div>
-
-      <h2>집 밖</h2>
-      <div class="card-group">
-        <div class="card">
-          <h3>미세먼지</h3>
-          <p>{{ pm10Status }}</p>
-        </div>
-        <div class="card">
-          <h3>초미세먼지</h3>
-          <p>{{ pm25Status }}</p>
-        </div>
-      </div>
-
-      <div class="controls">
-        <button>창문 열기</button>
-        <button>창문 닫기</button>
-      </div>
-    </div>
-
-    <!-- 에어 데이터 탭 -->
-    <div v-if="activeTab === 'data'" class="tab-content">
-      <h2>
-        현재 지역: {{ shadowData?.state?.reported?.region || "알 수 없음" }}
-      </h2>
-      <div class="graph-container">
-        <div>
-          <h3>이산화탄소 농도</h3>
-          <div ref="co2Graph" class="graph"></div>
-          <p>가장 높은 값: {{ maxCo2Time }}</p>
-        </div>
-        <div>
-          <h3>유해가스 농도</h3>
-          <div ref="harmfulGasGraph" class="graph"></div>
-          <p>가장 높은 값: {{ maxGasTime }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .device-shadow {
