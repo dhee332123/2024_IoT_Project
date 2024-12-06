@@ -2,6 +2,11 @@ const { defineConfig } = require('@vue/cli-service');
 
 module.exports = defineConfig({
   transpileDependencies: true,
+  pluginOptions: {
+    dotenv: {
+      path: '.env',
+    },
+  },
   configureWebpack: {
     resolve: {
       fallback: {

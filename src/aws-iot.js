@@ -4,13 +4,14 @@ import {
   UpdateThingShadowCommand,
 } from "@aws-sdk/client-iot-data-plane";
 
+// AWS IoT 클라이언트 초기화
 const client = new IoTDataPlaneClient({
-  region: "ap-northeast-2", // AWS 리전
+  region: process.env.VUE_APP_AWS_REGION,
   credentials: {
-    accessKeyId: "AKIA2MNVMG4PH4Y6NWMS", // AWS 액세스 키
-    secretAccessKey: "QbiNNEQaV1kbrDQg/YltXXjFiolKj5CO4C6II2Q0", // AWS 시크릿 키
+    accessKeyId: process.env.VUE_APP_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.VUE_APP_AWS_SECRET_ACCESS_KEY,
   },
-  endpoint: "https://a2bx7ei8ft2iig-ats.iot.ap-northeast-2.amazonaws.com", // AWS IoT 엔드포인트
+  endpoint: process.env.VUE_APP_AWS_IOT_ENDPOINT,
 });
 
 // Shadow 데이터를 가져오는 함수
@@ -57,7 +58,6 @@ export const updateWindowState = async (thingName, state) => {
   };
 
   try {
-    // Shadow 업데이트
     const response = await updateShadowData(thingName, payload);
     console.log(`Window state updated to ${state} in desired`, response);
     alert(`창문이 ${state === "open" ? "열림" : "닫힘"} 상태로 업데이트되었습니다.`);
