@@ -1,4 +1,4 @@
-# aws-iot-shadow
+# 2024_IoT_Project
 
 ## Project setup
 ```
